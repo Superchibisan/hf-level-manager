@@ -1,0 +1,1208 @@
+<title>HF Level Manager Rev 3</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap">
+
+<style>
+/* Layout: long-form spec doc, single column, sticky nav */
+:root {
+  --bg: #f8f7f5;
+  --surface: #ffffff;
+  --surface-2: #f0ede8;
+  --border: #e0dbd3;
+  --border-strong: #c8c2b8;
+  --fg: #1c1a17;
+  --fg-2: #4a4640;
+  --fg-muted: #7a7570;
+  --accent: #b5621a;
+  --accent-soft: #faeee0;
+  --change: #c47a00;
+  --change-soft: #fdf3d8;
+  --change-border: #e8c060;
+  --risk-stop: #a02020;
+  --risk-stop-soft: #fde8e8;
+  --risk-open: #c47a00;
+  --risk-open-soft: #fdf3d8;
+  --risk-design: #1a6a3a;
+  --risk-design-soft: #e4f5ec;
+  --risk-new: #1a4a8a;
+  --risk-new-soft: #e4edf8;
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', system-ui, sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #131210;
+    --surface: #1c1a17;
+    --surface-2: #252320;
+    --border: #343028;
+    --border-strong: #504840;
+    --fg: #f0ece6;
+    --fg-2: #c0b8b0;
+    --fg-muted: #8a8480;
+    --accent: #d4823a;
+    --accent-soft: #2e1a08;
+    --change: #d4a030;
+    --change-soft: #2a2008;
+    --change-border: #806030;
+    --risk-stop: #d06060;
+    --risk-stop-soft: #2a1010;
+    --risk-open: #d4a030;
+    --risk-open-soft: #2a2008;
+    --risk-design: #50c080;
+    --risk-design-soft: #0a2018;
+    --risk-new: #6090d4;
+    --risk-new-soft: #0a1828;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --bg: #131210;
+  --surface: #1c1a17;
+  --surface-2: #252320;
+  --border: #343028;
+  --border-strong: #504840;
+  --fg: #f0ece6;
+  --fg-2: #c0b8b0;
+  --fg-muted: #8a8480;
+  --accent: #d4823a;
+  --accent-soft: #2e1a08;
+  --change: #d4a030;
+  --change-soft: #2a2008;
+  --change-border: #806030;
+  --risk-stop: #d06060;
+  --risk-stop-soft: #2a1010;
+  --risk-open: #d4a030;
+  --risk-open-soft: #2a2008;
+  --risk-design: #50c080;
+  --risk-design-soft: #0a2018;
+  --risk-new: #6090d4;
+  --risk-new-soft: #0a1828;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.65;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0;
+}
+
+/* Document layout */
+.doc-wrap {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  max-width: 1040px;
+  margin: 0 auto;
+  gap: 0 40px;
+  padding-block: 48px 100px;
+  align-items: start;
+}
+
+/* Sidebar nav */
+.doc-nav {
+  position: sticky;
+  top: 24px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.nav-title {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 10px;
+}
+
+.nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.nav-list a {
+  display: block;
+  padding: 4px 8px;
+  color: var(--fg-2);
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-list a:hover {
+  background: var(--surface-2);
+  color: var(--fg);
+}
+
+.nav-list .nav-change a { color: var(--change); font-weight: 500; }
+.nav-list .nav-new a { color: var(--risk-new); font-weight: 500; }
+
+.nav-legend {
+  margin-top: 20px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Main content */
+.doc-main { min-width: 0; }
+
+/* Doc header */
+.doc-header {
+  margin-bottom: 48px;
+  padding-bottom: 32px;
+  border-bottom: 2px solid var(--fg);
+}
+
+.doc-kicker {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin-bottom: 12px;
+}
+
+.doc-title {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  margin: 0 0 20px;
+  text-wrap: balance;
+}
+
+.doc-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  font-size: 13px;
+  color: var(--fg-2);
+  font-family: var(--mono);
+}
+
+.meta-item { display: flex; align-items: center; gap: 6px; }
+.meta-label { color: var(--fg-muted); }
+
+.revision-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--change-soft);
+  border: 1px solid var(--change-border);
+  color: var(--change);
+  font-family: var(--mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  margin-top: 16px;
+}
+
+/* Sections */
+.doc-section {
+  margin-bottom: 52px;
+  scroll-margin-top: 24px;
+}
+
+h2 {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin: 0 0 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--border);
+  text-wrap: balance;
+}
+
+h3 {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 24px 0 10px;
+}
+
+p { margin: 0 0 14px; }
+p:last-child { margin-bottom: 0; }
+
+ul, ol {
+  margin: 0 0 14px;
+  padding-left: 20px;
+}
+
+li { margin-bottom: 6px; }
+
+strong { font-weight: 600; }
+
+/* Change callout */
+.change-note {
+  background: var(--change-soft);
+  border-left: 3px solid var(--change);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  margin: 16px 0;
+  color: var(--fg);
+}
+
+.change-note .change-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--change);
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* New content callout */
+.new-note {
+  background: var(--risk-new-soft);
+  border-left: 3px solid var(--risk-new);
+  padding: 12px 16px;
+  border-radius: 0 6px 6px 0;
+  font-size: 13px;
+  margin: 16px 0;
+}
+
+.new-note .new-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--risk-new);
+  font-weight: 600;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* Code / formula */
+.formula {
+  font-family: var(--mono);
+  font-size: 13px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 12px 16px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+
+/* Tables */
+.table-wrap { overflow-x: auto; margin: 12px 0 20px; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  min-width: 500px;
+}
+
+th {
+  text-align: left;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-strong);
+  white-space: nowrap;
+}
+
+td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.5;
+}
+
+tr:last-child td { border-bottom: none; }
+
+tr.row-changed td { background: var(--change-soft); }
+tr.row-new td { background: var(--risk-new-soft); }
+
+/* Risk table statuses */
+.status-pill {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 4px;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.s-stop { background: var(--risk-stop-soft); color: var(--risk-stop); }
+.s-open { background: var(--risk-open-soft); color: var(--risk-open); }
+.s-design { background: var(--risk-design-soft); color: var(--risk-design); }
+.s-new { background: var(--risk-new-soft); color: var(--risk-new); }
+.s-test { background: var(--accent-soft); color: var(--accent); }
+
+/* Prerequisite checklist */
+.prereq-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+}
+
+.prereq-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 12px;
+  align-items: start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px;
+  font-size: 13.5px;
+}
+
+.prereq-item.p-urgent {
+  border-color: var(--risk-stop);
+  background: var(--risk-stop-soft);
+}
+
+.prereq-item.p-new {
+  border-color: var(--risk-new);
+  background: var(--risk-new-soft);
+}
+
+.prereq-num {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--fg-muted);
+  padding-top: 1px;
+}
+
+.prereq-item.p-urgent .prereq-num { color: var(--risk-stop); }
+.prereq-item.p-new .prereq-num { color: var(--risk-new); }
+
+.prereq-text { min-width: 0; }
+.prereq-text strong { display: block; margin-bottom: 4px; }
+.prereq-text p { margin: 0; color: var(--fg-2); font-size: 13px; }
+
+.prereq-week {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  white-space: nowrap;
+  padding-top: 2px;
+}
+
+/* Validation checklist */
+.check-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.check-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 14px;
+  margin: 0;
+}
+
+.check-list li::before {
+  content: '□';
+  font-family: var(--mono);
+  color: var(--fg-muted);
+  flex-shrink: 0;
+}
+
+.check-list li.cl-new::before { color: var(--risk-new); }
+
+/* Open questions */
+.oq-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.oq-item {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.oq-item.oq-new { border-color: var(--risk-new); background: var(--risk-new-soft); }
+.oq-item.oq-changed { border-color: var(--change-border); background: var(--change-soft); }
+
+.oq-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  padding-top: 2px;
+  color: var(--fg-muted);
+}
+
+.oq-new .oq-tag { color: var(--risk-new); }
+.oq-changed .oq-tag { color: var(--change); }
+
+/* Responsive */
+@media (max-width: 700px) {
+  .doc-wrap {
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding-block: 28px 80px;
+  }
+  .doc-nav { display: none; }
+  .doc-title { font-size: 24px; }
+  .prereq-item { grid-template-columns: auto 1fr; }
+  .prereq-week { display: none; }
+}
+</style>
+
+<div class="doc-wrap">
+
+<!-- Sidebar nav -->
+<nav class="doc-nav" aria-label="Document sections">
+  <div class="nav-title">Contents</div>
+  <ul class="nav-list">
+    <li><a href="#summary">Summary</a></li>
+    <li><a href="#prerequisites">Prerequisites</a></li>
+    <li><a href="#principles">Design Principles</a></li>
+    <li><a href="#architecture">Architecture</a></li>
+    <li><a href="#stages">Control Stages</a></li>
+    <li class="nav-change"><a href="#leveler-spec">Leveler Target Level ↑</a></li>
+    <li><a href="#hardware">Hardware</a></li>
+    <li><a href="#mic">Measurement Mic</a></li>
+    <li><a href="#controls">Controls &amp; Presets</a></li>
+    <li><a href="#software">Control Software</a></li>
+    <li><a href="#latency">Latency Budget</a></li>
+    <li><a href="#tradeoffs">Trade-offs</a></li>
+    <li><a href="#risks">Risks &amp; Open Issues</a></li>
+    <li><a href="#validation">Validation</a></li>
+    <li><a href="#open-questions">Open Questions</a></li>
+  </ul>
+  <div class="nav-legend">
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--change)"></div>
+      Corrected
+    </div>
+    <div class="legend-item">
+      <div class="legend-dot" style="background:var(--risk-new)"></div>
+      Added
+    </div>
+  </div>
+</nav>
+
+<!-- Main content -->
+<main class="doc-main">
+
+  <header class="doc-header">
+    <div class="doc-kicker">Design Specification</div>
+    <h1 class="doc-title">HF Leveling Level Manager — Rev 3, Low-Latency Redesign</h1>
+    <div class="doc-meta">
+      <div class="meta-item"><span class="meta-label">Date</span> Oct 26, 2026</div>
+      <div class="meta-item"><span class="meta-label">Author</span> @Vincent</div>
+      <div class="meta-item"><span class="meta-label">Version</span> Rev 3 · corrected Oct 27, 2026</div>
+    </div>
+    <div class="revision-badge">
+      ⚑ Corrected by design review — Oct 27, 2026. Changes marked throughout.
+    </div>
+  </header>
+
+  <!-- SUMMARY -->
+  <section class="doc-section" id="summary">
+    <h2>Summary</h2>
+    <p>Rev 3 is a TOLEM-style level manager with HF leveling, rebuilt so the audio path adds effectively zero latency in its analog build and only a few samples in its digital build. It keeps every function from rev 2's management stages and drops everything that made audio wait.</p>
+
+    <p>What it does, per linked channel group:</p>
+    <ul>
+      <li><strong>Leveler</strong> (LEVELIZA-style): rides overall gain on loudness averaged over minutes.</li>
+      <li><strong>Overdrive limiter</strong> (NOPE-style): catches short overshoots and hands sustained ones back to the leveler.</li>
+      <li><strong>LF ceiling</strong> (BASSWATCH-style): caps content below 100 Hz.</li>
+      <li><strong>HF leveling</strong> (new): holds treble to a consistent ratio of overall loudness and below an absolute ceiling.</li>
+    </ul>
+
+    <p>What changed from rev 2:</p>
+    <ul>
+      <li><strong>Lookahead removed,</strong> saving 2 ms.</li>
+      <li><strong>Band split made complementary,</strong> so the output equals the input exactly when nothing is acting.</li>
+      <li><strong>Scope cut to an insert.</strong> Crossover, zone EQ and driver protection stay in the downstream system processor.</li>
+      <li><strong>Audio stays in its native domain:</strong> an analog VCA path for analog systems, a synchronous AES3 path for digital ones. No converters or sample rate converters are added to the audio path.</li>
+      <li><strong>All analysis moved to a parallel sidechain,</strong> where delay does not reach the audio.</li>
+    </ul>
+
+    <div class="change-note">
+      <span class="change-label">Correction — latency claim</span>
+      "Effectively zero latency in the analog build" is an architectural assertion, not a measured figure. The VCA control signal is derived from sidechain analysis; it carries filter settling time, detection time-constant delay, and DSP pipeline delay even in sample-by-sample mode. The claim must be confirmed by impulse measurement on the prototype. Until then this spec uses <em>architecturally zero added latency in the audio path</em> and defers the measured figure to validation.
+    </div>
+  </section>
+
+  <!-- PREREQUISITES -->
+  <section class="doc-section" id="prerequisites">
+    <h2>Prerequisites <span style="font-size:13px;font-weight:400;color:var(--risk-new);font-family:var(--mono);">— added</span></h2>
+    <p>Two risks flagged "do first" in rev 3 and three new gaps identified in design review must be resolved before prototype investment. These are not risks to track in parallel with hardware development; they are blockers. None of the work below costs more than two weeks or requires prototype hardware.</p>
+
+    <div class="prereq-list">
+
+      <div class="prereq-item p-urgent">
+        <span class="prereq-num">P-1</span>
+        <div class="prereq-text">
+          <strong>Trademark clearance — RC Audio product names</strong>
+          <p>The spec uses RC Audio product names (LEVELIZA, TOLEM, NOPE, BASSWATCH) in documents that may circulate. Trademark and trade dress exposure can generate a cease-and-desist independent of any patent filing, at a lower legal threshold and faster timeline. Have a lawyer review every document that names these products before it leaves the building. This is distinct from the patent question and faster to trigger.</p>
+        </div>
+        <span class="prereq-week">Week 1</span>
+      </div>
+
+      <div class="prereq-item p-urgent">
+        <span class="prereq-num">P-2</span>
+        <div class="prereq-text">
+          <strong>Patent freedom-to-operate search</strong>
+          <p>Run a freedom-to-operate search on the core architectural claims: program leveling via parallel sidechain VCA control, complementary band splits with independent gain, ratio-based HF leveling over minutes timescale. Two hours of Google Patents; follow with a paid search if anything ambiguous surfaces. If RC Audio holds relevant claims, the prototype path changes. This is separate from P-1 and takes longer to resolve.</p>
+        </div>
+        <span class="prereq-week">Week 1</span>
+      </div>
+
+      <div class="prereq-item p-new">
+        <span class="prereq-num">P-3</span>
+        <div class="prereq-text">
+          <strong>Define Leveler target level</strong>
+          <p>The K-weighted Leveler stage has no target LUFS or dB reference defined. Broadcast uses EBU R128; live PA has no equivalent standard. Without a setpoint, the stage is a control loop with no behavioral specification — it cannot be tuned, evaluated, or tested against a pass/fail criterion. Propose a target reference (e.g. −23 LUFS-K, or a practical field-calibrated equivalent) and document it before board design.</p>
+        </div>
+        <span class="prereq-week">Week 1</span>
+      </div>
+
+      <div class="prereq-item p-new">
+        <span class="prereq-num">P-4</span>
+        <div class="prereq-text">
+          <strong>ADAU1467 DSP load estimate</strong>
+          <p>Verify that the ADAU1467 in sample-by-sample mode can sustain all five cascaded control algorithms (K-weighted loudness integration, leveler loop, overdrive limiter, HF ratio leveler, HF overdrive limiter) plus the band split and gain update pipeline at the target sample rate without overflow. This is a desk calculation — get cycle counts for each stage from the SigmaStudio profiler or algorithm estimates before committing to this chip and board layout.</p>
+        </div>
+        <span class="prereq-week">Week 1</span>
+      </div>
+
+      <div class="prereq-item p-new">
+        <span class="prereq-num">P-5</span>
+        <div class="prereq-text">
+          <strong>Customer validation — HF leveling pain point</strong>
+          <p>Talk to five working FOH engineers on touring or broadcast productions. Ask: is HF leveling over minutes a problem you currently manage manually or with existing gear? This confirms the market demand assumption before hardware investment. Three of five saying "yes" is sufficient signal to proceed; unanimous confusion is a signal to reframe. RC Audio's potential to add this feature makes this question time-sensitive — treat it as a deadline, not a question.</p>
+        </div>
+        <span class="prereq-week">Week 2</span>
+      </div>
+
+      <div class="prereq-item p-new">
+        <span class="prereq-num">P-6</span>
+        <div class="prereq-text">
+          <strong>Define business model</strong>
+          <p>Is this a product for commercial sale, a licensed design, or a custom one-off? The answer determines channel count for the first build, pricing, certification requirements, whether network audio cards are in scope for rev 1, and who the customer validation conversation (P-5) is with. Document this before prototype planning.</p>
+        </div>
+        <span class="prereq-week">Week 2</span>
+      </div>
+
+    </div>
+
+    <p>If all six prerequisites clear: proceed to the 2-channel analog prototype. If P-1 or P-2 returns an unresolved exposure, resolve before any hardware expenditure. If P-5 returns weak signal, reframe the product before prototyping.</p>
+  </section>
+
+  <!-- DESIGN PRINCIPLES -->
+  <section class="doc-section" id="principles">
+    <h2>Design Principles</h2>
+    <p>Seven rules, each removing a source of delay or a reason to add one.</p>
+    <ol>
+      <li><strong>Nothing in the audio path waits.</strong> No lookahead, no FIR filters, no block buffers. The slow stages work on minutes of history and need no lookahead. The fast overdrive stage accepts a brief overshoot, which the downstream protection limiters catch.</li>
+      <li><strong>The audio path only multiplies.</strong> Gain is applied to the full signal and to two derived bands. Every measurement happens in a parallel sidechain.</li>
+      <li><strong>Complementary bands.</strong> LF is a lowpass of the input, HF is the input minus a lowpass, and mid is whatever remains. The three always sum back to the input, so with all gains at unity the output equals the input in level and phase.</li>
+      <li><strong>Stay in the native domain.</strong> Analog systems get an analog path; digital systems get a digital path. The device never converts audio just to process it.</li>
+      <li><strong>Synchronous clocking.</strong> The digital build locks to the house clock with sample rate conversion switched off.</li>
+      <li><strong>Sample-by-sample processing.</strong> The sidechain DSP processes each sample as it arrives rather than in blocks.</li>
+      <li><strong>Fail-safe bypass.</strong> A hard-wired relay connects input to output whenever power is lost, the DSP stops responding, or audio is present at the input but missing at the output. A hardware clamp on the VCA control voltage limits attenuation to a fixed floor (proposed −20 dB), so no control fault can silence the system.</li>
+    </ol>
+
+    <div class="change-note">
+      <span class="change-label">Correction — sidechain latency</span>
+      Principle 2 states that every measurement happens in the parallel sidechain. This is correct; the audio path carries no analysis delay. However: the VCA gain elements respond to a control signal derived from sidechain analysis. That control signal has real latency — filter settling time, detection time constants (attack and release time constants of each stage), and DSP pipeline delay. In the analog build this latency affects how quickly each stage responds to a transient, not the audio path phase or level at idle. The overdrive stage's response time to a fast transient is the principal consequence; the spec's treatment of this as acceptable (downstream limiters catch what slips past) stands, but must be quantified on the prototype.
+    </div>
+
+    <p>The band structure, with g the broadband gain:</p>
+    <div class="formula">M = x − L − H,   y = g·(M + g_LF·L + g_HF·H)</div>
+    <p>Here L is a lowpass of x at 100 Hz and H is x minus a lowpass at the HF corner. With every gain at 1, y equals x exactly.</p>
+  </section>
+
+  <!-- ARCHITECTURE -->
+  <section class="doc-section" id="architecture">
+    <h2>Architecture</h2>
+    <p>The audio path is a band split, three gains and a sum. Everything that measures or decides runs beside it.</p>
+    <p>Accented blocks are the gain elements: VCAs in the analog build, multiplies in the digital build. The bypass relay passes audio untouched if power fails, the DSP stops, or audio goes missing at the output.</p>
+
+    <div class="change-note">
+      <span class="change-label">Correction — cascade interaction</span>
+      Five stages sharing three gain elements with different time constants (minutes-scale leveler, fast overdrive limiter, fast HF overdrive, slow HF leveler, fast LF ceiling) is a known design challenge. Simultaneous action by stages operating at different speeds can produce interaction artifacts: gain pumping, transient over-compression, or oscillation between stages when all act on the same program material. The original spec does not address this. Validation must include multi-stage interaction testing (see Validation section). Simulation or measured transfer functions for typical program scenarios should be completed before production commit.
+    </div>
+  </section>
+
+  <!-- CONTROL STAGES -->
+  <section class="doc-section" id="stages">
+    <h2>Control Stages</h2>
+    <p>Five stages share three gain elements. Slow stages carry almost all gain reduction; fast stages only catch what slips past.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Stage</th>
+            <th>Detector</th>
+            <th>Time scale</th>
+            <th>Threshold</th>
+            <th>Acts on</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Leveler (LEVELIZA-style)</td>
+            <td>K-weighted loudness</td>
+            <td>Minutes at normal assertiveness; fast emergency path for big jumps</td>
+            <td>Set level, with a tamper-proof maximum</td>
+            <td>g</td>
+          </tr>
+          <tr>
+            <td>Overdrive limiter (NOPE-style)</td>
+            <td>Fast envelope, no lookahead</td>
+            <td>Fast attack; releases with the envelope; hands sustained overdrive to the leveler</td>
+            <td>Leveler threshold plus a set headroom</td>
+            <td>g</td>
+          </tr>
+          <tr>
+            <td>LF ceiling (BASSWATCH-style)</td>
+            <td>Peak below 100 Hz</td>
+            <td>Fast</td>
+            <td>Preset maximum</td>
+            <td>g_LF</td>
+          </tr>
+          <tr>
+            <td>HF leveler (new)</td>
+            <td>K-weighted loudness of the HF band, compared with overall loudness</td>
+            <td>Minutes, with an emergency path</td>
+            <td>The lower of a relative ratio and an absolute HF ceiling</td>
+            <td>g_HF</td>
+          </tr>
+          <tr>
+            <td>HF overdrive (new)</td>
+            <td>Fast HF envelope</td>
+            <td>Fast</td>
+            <td>HF ceiling plus a set headroom</td>
+            <td>g_HF</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- LEVELER TARGET LEVEL -->
+  <section class="doc-section" id="leveler-spec">
+    <h2>Leveler Target Level Specification <span style="font-size:13px;font-weight:400;color:var(--risk-new);font-family:var(--mono);">— added</span></h2>
+
+    <div class="new-note">
+      <span class="new-label">Added — specification gap closed</span>
+      The K-weighted Leveler had no target reference level defined in the original spec. This section closes that gap.
+    </div>
+
+    <p>The Leveler is a closed-loop controller. It requires a defined setpoint to be specified, tuned, and validated. Without one, the stage cannot be tested against a pass/fail criterion.</p>
+
+    <h3>Proposed reference</h3>
+    <p>The Leveler's target is the <strong>Max loudness</strong> control setting, expressed in the same K-weighted units as its detector. The detector uses the K-weighting of ITU-R BS.1770 (a high-shelf boost plus a high-pass). The Max loudness control should therefore be calibrated in loudness units relative to full scale (LUFS) on a K-weighted integrated scale, matching the detector's own measurement.</p>
+    <p>Proposed default: <strong>−16 LUFS-K</strong> integrated over the leveler's averaging window, with the tamper-proof maximum set at <strong>−12 LUFS-K</strong>. These figures are starting points for testing; actual values are determined by listening tests and operator feedback.</p>
+
+    <div class="change-note">
+      <span class="change-label">Open item</span>
+      Live PA has no equivalent of broadcast's EBU R128 standard. The proposed figure is a practical starting point, not a regulatory reference. The Learn function (which sets the target to the current loudness of show material) means the absolute value is operator-chosen, but the units must be consistent with the detector's measurement scale. Confirm units and proposed defaults in prototype listening tests before publishing any specification value.
+    </div>
+
+    <h3>HF leveler ratio</h3>
+    <p>The HF leveler's "Brightness" control sets the allowed ratio of HF-band loudness to overall loudness. This ratio also requires a specified range and default. Proposed default: −6 dB HF relative to overall K-weighted loudness (i.e. treble may not exceed overall by more than 6 dB once the leveler acts). Set in testing.</p>
+
+    <p>The shared rules from the original spec remain:</p>
+    <ul>
+      <li>Gains are linked across every channel in a group.</li>
+      <li>Attenuate only. No stage ever raises gain above unity.</li>
+      <li>Gain changes are slew-limited to avoid zipper noise and modulation.</li>
+      <li>The SPL loop only trims the leveler and HF ceiling targets slowly, within a capped range.</li>
+    </ul>
+  </section>
+
+  <!-- HARDWARE -->
+  <section class="doc-section" id="hardware">
+    <h2>Hardware</h2>
+    <p>Two builds share one sidechain design. Pick by the system you insert into: analog in, analog build; AES3 in, digital build.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Block</th><th>Analog build</th><th>Digital build</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Audio I/O</td>
+            <td>Balanced analog: THAT1240 receiver, DRV134 driver</td>
+            <td>AES3, locked to the house clock, sample rate conversion off</td>
+          </tr>
+          <tr>
+            <td>Gain elements</td>
+            <td>THAT2180 VCAs, three per channel (g, g_LF, g_HF)</td>
+            <td>Multiplies in the DSP</td>
+          </tr>
+          <tr>
+            <td>Band split</td>
+            <td>Op-amp filters with complementary subtraction</td>
+            <td>IIR filters in the DSP</td>
+          </tr>
+          <tr>
+            <td>Sidechain</td>
+            <td>Audio tapped to an ADC, processed in the DSP, gain sent to the VCA control ports through a control DAC</td>
+            <td>Same DSP, fed directly</td>
+          </tr>
+          <tr>
+            <td>DSP</td>
+            <td>ADAU1467, sample-by-sample</td>
+            <td>ADAU1467, sample-by-sample</td>
+          </tr>
+          <tr>
+            <td>Converters in the audio path</td>
+            <td>None</td>
+            <td>None</td>
+          </tr>
+          <tr>
+            <td>Fail-safe</td>
+            <td>Relay bypass on power loss</td>
+            <td>Relay bypass on the AES3 lines</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="new-note">
+      <span class="new-label">Added — DSP load prerequisite</span>
+      Before committing to the ADAU1467 and board layout, complete prerequisite P-4: verify that the processor can sustain all five control algorithms simultaneously at sample rate without DSP load overflow. If the load exceeds the processor's capacity, the architecture requires either a second DSP, algorithm restructuring, or a more capable processor. This is a desk calculation that should precede board design.
+    </div>
+
+    <p>Why these parts:</p>
+    <ul>
+      <li><strong>THAT2180:</strong> exponential (dB) gain control, under 0.01% distortion in the A grade, over 120 dB dynamic range, and a ±15 V supply that matches the analog rails.</li>
+      <li><strong>ADAU1467:</strong> a 294.912 MHz core with I/O up to 192 kHz and support for sample-by-sample stream processing.</li>
+    </ul>
+
+    <p>If the digital build needs analog I/O as an option, use converters with minimum-phase filters. The AK4458 DAC has short-delay filters with a group delay of 5.8 or 4.8 samples, about 60 µs or 50 µs at 96 kHz. A matching short-delay ADC is still to be selected; the PCM4202 shows mixed lifecycle status at distributors.</p>
+
+    <h3>Analog build specifics</h3>
+    <ul>
+      <li><strong>Analog idle null.</strong> How exactly the bands sum to the input depends on component matching. Use 0.1% resistors and a trim, and measure the null.</li>
+      <li><strong>Analog filters are fixed or switched,</strong> so HF corner choices are fewer than in DSP.</li>
+      <li><strong>VCA noise and distortion</strong> are low but not zero; the THAT2180A grade specifies under 0.01%.</li>
+    </ul>
+  </section>
+
+  <!-- MEASUREMENT MIC (abbreviated) -->
+  <section class="doc-section" id="mic">
+    <h2>Measurement Mic</h2>
+    <p>The mic is optional. Every core stage works on the audio signal alone; the mic adds settings in real dB SPL, compliance metering and logging, and the slow trim near a legal limit.</p>
+    <p>Rear-panel input. One XLR on the back panel, feeding a THAT1512 preamp and then the sidechain ADC only. The mic never reaches the audio path.</p>
+    <ul>
+      <li><strong>Phantom power to IEC 61938 P48:</strong> 48 V through 6.81 kΩ feed resistors on pins 2 and 3, matched to 0.1% or better, up to 10 mA. Soft-start, switchable, front-panel indicator.</li>
+      <li><strong>Input protection</strong> with blocking capacitors and clamp diodes.</li>
+      <li><strong>Mic correction file</strong> loaded in the app.</li>
+    </ul>
+
+    <div class="new-note">
+      <span class="new-label">Added — SPL log liability</span>
+      Compliance SPL logs are presented as a compliance feature and a potential revenue platform. Before marketing them as compliance evidence, establish what liability exposure exists if logs are used in regulatory or legal proceedings and contain errors (timing gaps, calibration drift, instrument uncertainty). Pursue IEC 61672 Class 1 or 2 certification for the measurement chain or document clearly that the device is a monitoring aid, not a certified measurement instrument. This affects how the feature is marketed and what claims the app makes about log accuracy.
+    </div>
+
+    <p>Three measurement modes: Live mic (continuous), Calibrated estimate (measured once at setup, then signal-derived), No mic (signal units only, compliance features off). If the mic drops out mid-show, the device keeps running on signal-based thresholds and holds the last SPL trim; the app shows a warning and the compliance log marks the gap.</p>
+  </section>
+
+  <!-- CONTROLS -->
+  <section class="doc-section" id="controls">
+    <h2>Controls, Presets and Recall</h2>
+    <p>Every setting is stored, recallable and shown at its true value. The panel uses endless encoders with LED rings, run by a front-panel microcontroller that talks to the DSP over I2C or SPI. Control traffic never touches the audio path.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Label</th><th>Sets</th></tr></thead>
+        <tbody>
+          <tr><td>Max loudness</td><td>Leveler threshold (in LUFS-K — see Leveler Target Level)</td></tr>
+          <tr><td>Response</td><td>Assertiveness: Normal, Fast or Calibrate</td></tr>
+          <tr><td>Peak headroom</td><td>Overdrive limiter headroom above Max loudness</td></tr>
+          <tr><td>Bass ceiling</td><td>LF ceiling below 100 Hz</td></tr>
+          <tr><td>Brightness</td><td>Allowed HF-to-overall ratio</td></tr>
+          <tr><td>Treble ceiling</td><td>Absolute HF ceiling</td></tr>
+          <tr><td>Input trim</td><td>Input level</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Also on the panel: 8 preset buttons, Store, Learn, Bypass and Lock; a small screen showing the preset name and the value being turned; and gain reduction meters for the leveler, overdrive, bass and treble stages. A 2.4-inch transflective color TFT on SPI. An ambient light sensor sets the backlight and LED ring brightness automatically.</p>
+
+    <h3>Presets</h3>
+    <ul>
+      <li><strong>Switching is seamless.</strong> Gains glide to new targets at the normal slew rate; the leveler keeps its current state instead of resetting.</li>
+      <li><strong>Power-up</strong> returns to the last-used preset, in bypass until the DSP is running.</li>
+      <li><strong>Edited indicator.</strong> A preset button blinks when any value differs from the stored version.</li>
+      <li><strong>Hidden maximum.</strong> The tamper-proof threshold applies across all presets.</li>
+      <li><strong>Templates</strong> for speech, live band and DJ shows; values set in testing.</li>
+    </ul>
+  </section>
+
+  <!-- SOFTWARE -->
+  <section class="doc-section" id="software">
+    <h2>Control Software</h2>
+    <p>One desktop app for Windows and macOS, connecting over the device's Ethernet port.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Screen</th><th>What it does</th></tr></thead>
+        <tbody>
+          <tr><td>Live</td><td>Which stage is acting and by how much, all front-panel controls, the last 30 minutes of overall and treble loudness against their limits, I/O meters, and which treble limit is in control.</td></tr>
+          <tr><td>Presets</td><td>The 8 slots with key values and status; stored-vs-live comparison; store, revert, rename, copy; recall triggers; templates; back up, restore and copy presets to other devices.</td></tr>
+          <tr><td>Compliance</td><td>Current LAeq and LCeq against the limits, time left in the window, rule setup, near-limit action, per-window history, event log, CSV or PDF export.</td></tr>
+          <tr><td>Setup</td><td>Learn level, device name, channel linking, treble band corner, front-panel lock and brightness, hidden maximums behind an admin PIN, contact-closure and network-command mapping, firmware and diagnostics.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Security (added after review): authenticated control, signed firmware, admin PIN enforced over the network, command port off by default. FOH view: read-only gain-reduction view for a tablet or browser. Trustworthy logs: compliance logs are signed; timestamps come from a battery-backed clock synced to network time.</p>
+  </section>
+
+  <!-- LATENCY BUDGET -->
+  <section class="doc-section" id="latency">
+    <h2>Latency Budget</h2>
+
+    <div class="change-note">
+      <span class="change-label">Correction — latency figures</span>
+      "Effectively zero" and "a few samples" are architectural estimates, not measured values. The table below retains these descriptions but marks them as targets requiring prototype measurement. The analog build's audio path (filters and VCAs) adds no signal-path delay at idle. The digital build's DSP pipeline adds a number of samples that depends on the filter implementation and gain-update scheduling; this must be measured on the prototype.
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Contributor</th><th>Rev 2</th><th>Rev 3 analog</th><th>Rev 3 digital (AES3)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Lookahead</td><td>2 ms</td><td>None</td><td>None</td></tr>
+          <tr><td>A/D and D/A</td><td>Not measured</td><td>None</td><td>None</td></tr>
+          <tr><td>Sample rate conversion</td><td>Optional on AES3</td><td>Not applicable</td><td>Off</td></tr>
+          <tr><td>Filters</td><td>LR24 IIR, phase rotation always present</td><td>Analog, complementary: no phase change when idle</td><td>IIR, complementary: no phase change when idle</td></tr>
+          <tr><td>DSP pipeline</td><td>Not specified</td><td>Sidechain only</td><td><em>To be measured on prototype</em></td></tr>
+          <tr class="row-changed"><td>Total (idle)</td><td>~2.6 ms</td><td><em>To be measured — target: &lt; 100 µs</em></td><td><em>To be measured — target: &lt; 1 ms</em></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>The digital build with optional analog I/O adds the converters' delay: 5.8 samples for the AK4458 short-delay filter (about 60 µs at 96 kHz) plus the ADC, still to be selected and measured. In the analog build, sidechain delay only slows the overdrive stage's reaction; it never delays the audio.</p>
+  </section>
+
+  <!-- TRADE-OFFS -->
+  <section class="doc-section" id="tradeoffs">
+    <h2>Trade-offs and Risks</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Trade-off</th><th>Effect</th><th>Mitigation</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>No lookahead</td>
+            <td>Sharp transients pass for the overdrive stage's attack time before it catches them</td>
+            <td>This device manages comfort and consistency, not driver safety; downstream system limiters stay mandatory</td>
+          </tr>
+          <tr>
+            <td>Complementary HF band</td>
+            <td>Its lower skirt is gentler than a matched crossover, so HF reduction reaches slightly into the upper mids</td>
+            <td>Set the HF corner above the system's MF/HF crossover; confirm by measurement</td>
+          </tr>
+          <tr>
+            <td>Insert-only scope</td>
+            <td>No standalone mode: no crossover, zone EQ or protection</td>
+            <td>Always pair with a system processor</td>
+          </tr>
+          <tr>
+            <td>Clocking (digital build)</td>
+            <td>Without a house clock, sample rate conversion would be needed and would add latency</td>
+            <td>Require a house clock; refuse to pass audio unlocked rather than convert</td>
+          </tr>
+          <tr class="row-new">
+            <td>Five cascaded stages, mismatched time constants</td>
+            <td>Simultaneous action at different speeds can produce pumping, gain hunting, or inter-stage oscillation on complex program material</td>
+            <td>Simulate or measure multi-stage transfer functions before production commit; validate with real program material in listening tests (see Validation)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- RISKS -->
+  <section class="doc-section" id="risks">
+    <h2>Risks and Open Issues</h2>
+
+    <div class="change-note">
+      <span class="change-label">Correction — risk count and reframing</span>
+      The original spec listed 11 risks. This revision adds 4 new risks (R-12 through R-15) and splits R-1 (IP) into its two distinct components with separate urgency and resolution paths. Total: 15 risk items. Risks 1a, 1b, and 15 remain project-stopping and must be resolved before hardware expenditure.
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Risk</th><th>Impact</th><th>Response</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr class="row-changed">
+            <td>1a</td>
+            <td><strong>Trademark — RC Audio product names in circulation</strong><br>The spec uses LEVELIZA, TOLEM, NOPE, BASSWATCH in documents that may circulate</td>
+            <td>Cease-and-desist before prototype hardware is ordered; faster and lower threshold than patent action</td>
+            <td>Legal review of all documents using these names before external circulation; remove names from anything public; substitute generic descriptions</td>
+            <td><span class="status-pill s-stop">Do first</span></td>
+          </tr>
+          <tr class="row-changed">
+            <td>1b</td>
+            <td><strong>Patent — freedom-to-operate on core architectural claims</strong><br>Design follows TOLEM approach; patents unchecked</td>
+            <td>Could stop the project after prototype investment</td>
+            <td>Freedom-to-operate search on: parallel sidechain program leveling, complementary band-split VCA control, ratio-based HF leveling. Paid search if ambiguous</td>
+            <td><span class="status-pill s-stop">Do first</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td>Fail-silent: a control fault holds the VCAs at full attenuation</td>
+            <td>Show-stopping</td>
+            <td>Hardware clamp on VCA control voltage (proposed −20 dB max attenuation); audio-present detection trips the bypass relay</td>
+            <td><span class="status-pill s-design">In design</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td>Feeds that skip the device (subs from aux or matrix)</td>
+            <td>Tonal balance shifts; bass ceiling blind to subs</td>
+            <td>Gain linking across devices over the network; setup check lists any feed not linked</td>
+            <td><span class="status-pill s-design">In design</span></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td>Compliance log not accepted as evidence</td>
+            <td>Limits compliance sales</td>
+            <td>Pursue IEC 61672 Class 1 or 2; signed tamper-evident logs; battery clock with network time sync; market as monitoring aid until certified</td>
+            <td><span class="status-pill s-open">Open</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td>Network security: control, recall and Bypass reachable without authentication</td>
+            <td>Anyone on the show network can bypass or recall</td>
+            <td>Authenticated control, signed firmware, admin PIN over network, command port off by default</td>
+            <td><span class="status-pill s-design">In design</span></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td>Feedback during speech as the leveler recovers toward unity</td>
+            <td>Ringing on open lavs and lectern mics</td>
+            <td>Speech presets cap recovery rate or hold; treble lift off for speech</td>
+            <td><span class="status-pill s-design">In design</span></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td>Pauses drag measured loudness down, so gain drifts up</td>
+            <td>Next loud moment arrives too hot</td>
+            <td>Loudness gating as defined in ITU-R BS.1770</td>
+            <td><span class="status-pill s-design">In design</span></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td>Harshness lives partly in the upper mids; distortion causes harshness the device can't see</td>
+            <td>HF goal partly missed; less trimming when overdriven</td>
+            <td>HF detector weighted toward the harsh region; Program vs room separates distortion from crowd noise</td>
+            <td><span class="status-pill s-test">Needs testing</span></td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td>Guest engineer at FOH can't see the device working</td>
+            <td>Engineer fights the leveler</td>
+            <td>Remote gain-reduction view at FOH on a tablet or browser</td>
+            <td><span class="status-pill s-design">In design</span></td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td>Product certification and power not specified</td>
+            <td>Can't be sold</td>
+            <td>IEC 62368-1 safety, EN 55032/55035 EMC, FCC Part 15, CE/UKCA, RoHS; universal-voltage supply</td>
+            <td><span class="status-pill s-open">Open</span></td>
+          </tr>
+          <tr class="row-changed">
+            <td>11</td>
+            <td><strong>Demand unproven; the TOLEM exists and RC Audio could add an HF stage</strong></td>
+            <td>Could stop the project — and is time-sensitive: RC Audio's ability to add HF leveling is a deadline, not a passive risk. This may be an 18-month window.</td>
+            <td>Interviews with system techs, venues and rental companies before prototype investment (prerequisite P-5); set a price against the TOLEM; confirm the HF problem is worth paying to solve</td>
+            <td><span class="status-pill s-stop">Do first</span></td>
+          </tr>
+          <tr class="row-new">
+            <td>12</td>
+            <td><strong>K-weighted Leveler target level undefined</strong><br>No LUFS or dB reference specified; live PA has no equivalent of EBU R128</td>
+            <td>Stage cannot be tuned, evaluated, or tested without a behavioral specification; prototype validation criteria undefined</td>
+            <td>Define a proposed target reference (see Leveler Target Level section); confirm in prototype listening tests</td>
+            <td><span class="status-pill s-new">Added</span></td>
+          </tr>
+          <tr class="row-new">
+            <td>13</td>
+            <td><strong>ADAU1467 DSP load capacity unverified</strong><br>Five cascaded algorithms at sample rate; no cycle count estimate</td>
+            <td>If load overflows, the parallel sidechain premise collapses; may require second DSP or algorithm restructuring</td>
+            <td>Complete DSP load estimate (prerequisite P-4) before board design commit</td>
+            <td><span class="status-pill s-new">Added</span></td>
+          </tr>
+          <tr class="row-new">
+            <td>14</td>
+            <td><strong>Business model undefined</strong><br>Not established whether this is a commercial product, licensed design, or custom one-off</td>
+            <td>Channel count, pricing, certification scope, network audio scope, and customer validation target all depend on this answer</td>
+            <td>Define business model (prerequisite P-6) before prototype planning</td>
+            <td><span class="status-pill s-new">Added</span></td>
+          </tr>
+          <tr class="row-new">
+            <td>15</td>
+            <td><strong>Five-stage cascade interaction artifacts unverified</strong><br>No simulation or measured transfer functions for simultaneous multi-stage operation</td>
+            <td>Pumping, gain hunting, or inter-stage oscillation on complex program material; discovered late (post-prototype) if not tested</td>
+            <td>Simulate multi-stage transfer functions before board commit; include interaction testing in prototype validation plan</td>
+            <td><span class="status-pill s-new">Added</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- VALIDATION -->
+  <section class="doc-section" id="validation">
+    <h2>Validation and Open Questions</h2>
+    <p>No latency or tuning figure in this spec is proven until these tests run on a prototype. Prerequisites P-1 through P-6 must complete before the prototype is ordered.</p>
+
+    <h3>Required before board design</h3>
+    <ul class="check-list">
+      <li class="cl-new">DSP load estimate — ADAU1467 cycle count for all five algorithms at target sample rate (prerequisite P-4)</li>
+      <li class="cl-new">Leveler target level defined — LUFS-K reference and proposed default (prerequisite P-3)</li>
+      <li class="cl-new">Cascade interaction simulation — transfer functions for simultaneous multi-stage operation (risk 15)</li>
+    </ul>
+
+    <h3>Required before prototype order</h3>
+    <ul class="check-list">
+      <li class="cl-new">Trademark clearance — RC Audio product names (prerequisite P-1)</li>
+      <li class="cl-new">Patent freedom-to-operate result (prerequisite P-2)</li>
+      <li class="cl-new">Customer validation — five FOH engineer interviews (prerequisite P-5)</li>
+      <li class="cl-new">Business model defined (prerequisite P-6)</li>
+    </ul>
+
+    <h3>Prototype validation tests</h3>
+    <ul class="check-list">
+      <li>End-to-end latency — impulse in to impulse out, for both builds (replaces "effectively zero" and "a few samples" with measured figures)</li>
+      <li>Idle null — output minus input with every gain at unity, across the audio band</li>
+      <li>Overshoot — tone bursts above the overdrive threshold; record peak overshoot and duration</li>
+      <li>HF band shape — measure how far HF reduction reaches below the HF corner</li>
+      <li class="cl-new">Cascade interaction — program material that simultaneously triggers leveler, overdrive, and HF stages; measure for pumping or gain hunting</li>
+      <li>Listening tests — leveler and HF leveler assertiveness settings on real show material</li>
+      <li>VCA control latency — measure time from a transient at the sidechain ADC input to gain change at the VCA output</li>
+    </ul>
+  </section>
+
+  <!-- OPEN QUESTIONS -->
+  <section class="doc-section" id="open-questions">
+    <h2>Open Questions</h2>
+    <ul class="oq-list">
+      <li class="oq-item oq-new">
+        <span class="oq-tag">New</span>
+        <span>Business model: commercial product, licensed design, or custom one-off? (prerequisite P-6 — determines all other scoping decisions)</span>
+      </li>
+      <li class="oq-item oq-changed">
+        <span class="oq-tag">Reframed</span>
+        <span>Market demand — is this a question or a deadline? Treat as a deadline: RC Audio could add HF leveling in a firmware update. Complete customer interviews (P-5) before prototype order.</span>
+      </li>
+      <li class="oq-item">
+        <span class="oq-tag">Open</span>
+        <span>Channel count for the first build: 2, 4 or 8 linked channels. Depends on business model (P-6) and customer validation (P-5). Recommendation: 2 channels for prototype validation regardless of production channel count.</span>
+      </li>
+      <li class="oq-item">
+        <span class="oq-tag">Open</span>
+        <span>Analog or digital build first? Recommendation: analog build first — the zero audio-path latency claim is physically demonstrable and requires no house clock dependency.</span>
+      </li>
+      <li class="oq-item">
+        <span class="oq-tag">Open</span>
+        <span>Select a short-delay ADC for the digital build's optional analog I/O. (PCM4202 shows mixed lifecycle status.)</span>
+      </li>
+      <li class="oq-item">
+        <span class="oq-tag">Open</span>
+        <span>Network audio card: confirm demand for Dante and Milan versions. The card's latency is set by the network, not this device. Defer to rev 2 unless business model (P-6) makes it a launch requirement.</span>
+      </li>
+      <li class="oq-item">
+        <span class="oq-tag">Open</span>
+        <span>Program vs room: set the discount cap and the coherence thresholds for acting and for fallback, using crowd recordings from real shows.</span>
+      </li>
+      <li class="oq-item">
+        <span class="oq-tag">Open</span>
+        <span>Measure how much the mic-to-floor offset changes between empty and full rooms, to size the default safety margin.</span>
+      </li>
+      <li class="oq-item">
+        <span class="oq-tag">Open</span>
+        <span>Which show-control protocols to support.</span>
+      </li>
+      <li class="oq-item oq-new">
+        <span class="oq-tag">New</span>
+        <span>Leveler target reference: confirm −16 LUFS-K as the proposed default and −12 LUFS-K as the tamper-proof maximum, or revise in listening tests.</span>
+      </li>
+      <li class="oq-item oq-new">
+        <span class="oq-tag">New</span>
+        <span>HF Brightness default ratio: confirm −6 dB HF relative to overall K-weighted loudness as proposed default, or revise in listening tests.</span>
+      </li>
+      <li class="oq-item oq-new">
+        <span class="oq-tag">New</span>
+        <span>Redundant power supply: decide for touring units before product certification (risk 10).</span>
+      </li>
+    </ul>
+  </section>
+
+</main>
+</div>
