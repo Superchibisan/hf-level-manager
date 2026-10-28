@@ -559,13 +559,13 @@ tr.row-new td { background: var(--risk-new-soft); }
   <!-- SUMMARY -->
   <section class="doc-section" id="summary">
     <h2>Summary</h2>
-    <p>Rev 3 is a TOLEM-style level manager with HF leveling, rebuilt so the audio path adds effectively zero latency in its analog build and only a few samples in its digital build. It keeps every function from rev 2's management stages and drops everything that made audio wait.</p>
+    <p>Rev 3 is a multi-stage level manager with HF leveling, rebuilt so the audio path adds effectively zero latency in its analog build and only a few samples in its digital build. It keeps every function from rev 2's management stages and drops everything that made audio wait.</p>
 
     <p>What it does, per linked channel group:</p>
     <ul>
-      <li><strong>Leveler</strong> (LEVELIZA-style): rides overall gain on loudness averaged over minutes.</li>
-      <li><strong>Overdrive limiter</strong> (NOPE-style): catches short overshoots and hands sustained ones back to the leveler.</li>
-      <li><strong>LF ceiling</strong> (BASSWATCH-style): caps content below 100 Hz.</li>
+      <li><strong>Leveler</strong>: rides overall gain on loudness averaged over minutes.</li>
+      <li><strong>Overdrive limiter</strong>: catches short overshoots and hands sustained ones back to the leveler.</li>
+      <li><strong>LF ceiling</strong>: caps content below 100 Hz.</li>
       <li><strong>HF leveling</strong> (new): holds treble to a consistent ratio of overall loudness and below an absolute ceiling.</li>
     </ul>
 
@@ -594,8 +594,8 @@ tr.row-new td { background: var(--risk-new-soft); }
       <div class="prereq-item p-urgent">
         <span class="prereq-num">P-1</span>
         <div class="prereq-text">
-          <strong>Trademark clearance — RC Audio product names</strong>
-          <p>The spec uses RC Audio product names (LEVELIZA, TOLEM, NOPE, BASSWATCH) in documents that may circulate. Trademark and trade dress exposure can generate a cease-and-desist independent of any patent filing, at a lower legal threshold and faster timeline. Have a lawyer review every document that names these products before it leaves the building. This is distinct from the patent question and faster to trigger.</p>
+          <strong>Trademark clearance — third-party product names</strong>
+          <p>Earlier drafts of this spec referenced third-party product names that may carry trademark or trade dress protection. Those names have been removed from this document. Any prior draft that used those names should not circulate further until legal review. Trademark exposure can generate a cease-and-desist independent of any patent filing, at a lower legal threshold and faster timeline. This is distinct from the patent question and faster to trigger.</p>
         </div>
         <span class="prereq-week">Week 1</span>
       </div>
@@ -603,10 +603,17 @@ tr.row-new td { background: var(--risk-new-soft); }
       <div class="prereq-item p-urgent">
         <span class="prereq-num">P-2</span>
         <div class="prereq-text">
-          <strong>Patent freedom-to-operate search</strong>
-          <p>Run a freedom-to-operate search on the core architectural claims: program leveling via parallel sidechain VCA control, complementary band splits with independent gain, ratio-based HF leveling over minutes timescale. Two hours of Google Patents; follow with a paid search if anything ambiguous surfaces. If RC Audio holds relevant claims, the prototype path changes. This is separate from P-1 and takes longer to resolve.</p>
+          <strong>Patent freedom-to-operate — initial search complete; three patents need claim-level reads</strong>
+          <p><strong>Claims assessed LOW risk:</strong> Parallel sidechain VCA architecture (all relevant patents expired pre-2013); ratio-based HF leveling over overall loudness (no patent found for this formulation).</p>
+          <p><strong>Claims assessed MEDIUM risk — claim-level reads required:</strong></p>
+          <ul>
+            <li><strong>Dolby US8924220B2</strong> (multiband compressor, expires ~2031) — does it claim complementary-summing bands specifically, or just any split-and-process topology?</li>
+            <li><strong>Waves US8488811B2</strong> (two-stage slow+fast limiter, expires ~2030) — does it claim a single shared gain element, or sequential independent stages?</li>
+            <li><strong>US12334888B2</strong> (2025 multi-band limiter, active) — newly filed; check claims against complementary band split formulation.</li>
+          </ul>
+          <p>No RC Audio patents found. Aphex sidechain/VCA patents (US5422602A, US5896458A) are expired. Commission claim-level reads on the three above before board design.</p>
         </div>
-        <span class="prereq-week">Week 1</span>
+        <span class="prereq-week">Week 1–2</span>
       </div>
 
       <div class="prereq-item p-new">
@@ -621,17 +628,19 @@ tr.row-new td { background: var(--risk-new-soft); }
       <div class="prereq-item p-new">
         <span class="prereq-num">P-4</span>
         <div class="prereq-text">
-          <strong>ADAU1467 DSP load estimate</strong>
-          <p>Verify that the ADAU1467 in sample-by-sample mode can sustain all five cascaded control algorithms (K-weighted loudness integration, leveler loop, overdrive limiter, HF ratio leveler, HF overdrive limiter) plus the band split and gain update pipeline at the target sample rate without overflow. This is a desk calculation — get cycle counts for each stage from the SigmaStudio profiler or algorithm estimates before committing to this chip and board layout.</p>
+          <strong>ADAU1467 DSP load — desk estimate complete: load is ~5% at 96 kHz ✓</strong>
+          <p>Estimated pipeline: ~145 instructions per sample. Budget at 96 kHz: 3,072 instructions per sample. Load is approximately 5% — comfortable even at 5× pessimistic margin. The design fits this processor.</p>
+          <p><strong>Remaining action:</strong> Run SigmaStudio Link-Compile-Connect to get the actual compiled instruction count before layout commit. No hardware required for this check.</p>
+          <p><strong>New risk identified:</strong> The minutes-scale loudness integrator accumulates over a very long window in fixed-point arithmetic. Denormal accumulation or word-length overflow in the ADAU1467's 5.27 fixed-point format could cause level drift. Verify accumulator word length and integration step sizing in firmware design.</p>
         </div>
-        <span class="prereq-week">Week 1</span>
+        <span class="prereq-week">Resolved ✓</span>
       </div>
 
       <div class="prereq-item p-new">
         <span class="prereq-num">P-5</span>
         <div class="prereq-text">
           <strong>Customer validation — HF leveling pain point</strong>
-          <p>Talk to five working FOH engineers on touring or broadcast productions. Ask: is HF leveling over minutes a problem you currently manage manually or with existing gear? This confirms the market demand assumption before hardware investment. Three of five saying "yes" is sufficient signal to proceed; unanimous confusion is a signal to reframe. RC Audio's potential to add this feature makes this question time-sensitive — treat it as a deadline, not a question.</p>
+          <p>Talk to five working FOH engineers on touring or broadcast productions. Ask: is HF leveling over minutes a problem you currently manage manually or with existing gear? This confirms the market demand assumption before hardware investment. Three of five saying "yes" is sufficient signal to proceed; unanimous confusion is a signal to reframe. No existing hardware product occupies this niche, but a software solution shipped in 2025 — treat customer validation as a deadline, not a passive question.</p>
         </div>
         <span class="prereq-week">Week 2</span>
       </div>
@@ -704,21 +713,21 @@ tr.row-new td { background: var(--risk-new-soft); }
         </thead>
         <tbody>
           <tr>
-            <td>Leveler (LEVELIZA-style)</td>
+            <td>Leveler</td>
             <td>K-weighted loudness</td>
             <td>Minutes at normal assertiveness; fast emergency path for big jumps</td>
             <td>Set level, with a tamper-proof maximum</td>
             <td>g</td>
           </tr>
           <tr>
-            <td>Overdrive limiter (NOPE-style)</td>
+            <td>Overdrive limiter</td>
             <td>Fast envelope, no lookahead</td>
             <td>Fast attack; releases with the envelope; hands sustained overdrive to the leveler</td>
             <td>Leveler threshold plus a set headroom</td>
             <td>g</td>
           </tr>
           <tr>
-            <td>LF ceiling (BASSWATCH-style)</td>
+            <td>LF ceiling</td>
             <td>Peak below 100 Hz</td>
             <td>Fast</td>
             <td>Preset maximum</td>
@@ -1002,17 +1011,17 @@ tr.row-new td { background: var(--risk-new-soft); }
         <tbody>
           <tr class="row-changed">
             <td>1a</td>
-            <td><strong>Trademark — RC Audio product names in circulation</strong><br>The spec uses LEVELIZA, TOLEM, NOPE, BASSWATCH in documents that may circulate</td>
+            <td><strong>Trademark — third-party product names in prior drafts</strong><br>Earlier drafts referenced third-party product names that may carry trademark protection. Those names have been removed from this document; prior drafts should not circulate.</td>
             <td>Cease-and-desist before prototype hardware is ordered; faster and lower threshold than patent action</td>
             <td>Legal review of all documents using these names before external circulation; remove names from anything public; substitute generic descriptions</td>
             <td><span class="status-pill s-stop">Do first</span></td>
           </tr>
           <tr class="row-changed">
             <td>1b</td>
-            <td><strong>Patent — freedom-to-operate on core architectural claims</strong><br>Design follows TOLEM approach; patents unchecked</td>
-            <td>Could stop the project after prototype investment</td>
-            <td>Freedom-to-operate search on: parallel sidechain program leveling, complementary band-split VCA control, ratio-based HF leveling. Paid search if ambiguous</td>
-            <td><span class="status-pill s-stop">Do first</span></td>
+            <td><strong>Patent — three active patents require claim-level reads</strong><br>Initial FTO search complete. Two claims LOW risk (sidechain VCA, HF ratio). Three active patents need claim reads: Dolby US8924220B2, Waves US8488811B2, US12334888B2 (2025). No RC Audio patents found.</td>
+            <td>Could stop the project if a claim read returns a blocking claim — particularly Waves US8488811B2 (slow+fast gain stages) or Dolby US8924220B2 (multiband dynamics)</td>
+            <td>Commission claim-level reads on the three identified patents. If blocking claim found: redesign around separate gain stages (slow leveler and fast limiter on independent VCAs) to avoid the shared-element formulation</td>
+            <td><span class="status-pill s-open">In progress</span></td>
           </tr>
           <tr>
             <td>2</td>
@@ -1079,9 +1088,9 @@ tr.row-new td { background: var(--risk-new-soft); }
           </tr>
           <tr class="row-changed">
             <td>11</td>
-            <td><strong>Demand unproven; the TOLEM exists and RC Audio could add an HF stage</strong></td>
-            <td>Could stop the project — and is time-sensitive: RC Audio's ability to add HF leveling is a deadline, not a passive risk. This may be an 18-month window.</td>
-            <td>Interviews with system techs, venues and rental companies before prototype investment (prerequisite P-5); set a price against the TOLEM; confirm the HF problem is worth paying to solve</td>
+            <td><strong>Demand unproven; no dedicated hardware exists, but a software equivalent shipped in 2025</strong></td>
+            <td>Could stop the project. The hardware niche is confirmed vacant — no competitor ships a combined program leveler + HF ratio leveling insert. However, a 2025 software plugin (SPL Machine Head with HF Adjust) addresses a similar problem. Treat this as a closing window.</td>
+            <td>Interviews with system techs, venues and rental companies before prototype investment (prerequisite P-5); confirm the HF problem warrants a dedicated hardware insert over software</td>
             <td><span class="status-pill s-stop">Do first</span></td>
           </tr>
           <tr class="row-new">
@@ -1093,10 +1102,10 @@ tr.row-new td { background: var(--risk-new-soft); }
           </tr>
           <tr class="row-new">
             <td>13</td>
-            <td><strong>ADAU1467 DSP load capacity unverified</strong><br>Five cascaded algorithms at sample rate; no cycle count estimate</td>
-            <td>If load overflows, the parallel sidechain premise collapses; may require second DSP or algorithm restructuring</td>
-            <td>Complete DSP load estimate (prerequisite P-4) before board design commit</td>
-            <td><span class="status-pill s-new">Added</span></td>
+            <td><strong>ADAU1467 DSP load — desk estimate complete, resolved ✓</strong><br>~145 instructions/sample estimated; budget at 96 kHz is 3,072. Load ≈5%. New sub-risk: minutes-scale integrator fixed-point precision (5.27 format, possible denormal drift).</td>
+            <td>Throughput: not a risk at this load. Fixed-point precision: integrator word-length overflow could cause slow level drift on the Leveler over long shows</td>
+            <td>Run SigmaStudio Link-Compile-Connect for actual count. Verify integrator accumulator word length and step size in firmware design before board commit.</td>
+            <td><span class="status-pill s-design">In design</span></td>
           </tr>
           <tr class="row-new">
             <td>14</td>
@@ -1124,15 +1133,17 @@ tr.row-new td { background: var(--risk-new-soft); }
 
     <h3>Required before board design</h3>
     <ul class="check-list">
-      <li class="cl-new">DSP load estimate — ADAU1467 cycle count for all five algorithms at target sample rate (prerequisite P-4)</li>
+      <li class="cl-new" style="text-decoration:line-through;opacity:0.6;">DSP load estimate — ADAU1467 cycle count for all five algorithms at target sample rate (prerequisite P-4) — <strong>RESOLVED:</strong> ~5% load at 96 kHz; run SigmaStudio compile to confirm</li>
       <li class="cl-new">Leveler target level defined — LUFS-K reference and proposed default (prerequisite P-3)</li>
       <li class="cl-new">Cascade interaction simulation — transfer functions for simultaneous multi-stage operation (risk 15)</li>
+      <li class="cl-new">Integrator word-length verification — ADAU1467 5.27 fixed-point accumulator for minutes-scale leveler (new sub-risk from R-13)</li>
+      <li class="cl-new">Claim-level reads — Dolby US8924220B2, Waves US8488811B2, US12334888B2 (from FTO initial search, R-1b)</li>
     </ul>
 
     <h3>Required before prototype order</h3>
     <ul class="check-list">
-      <li class="cl-new">Trademark clearance — RC Audio product names (prerequisite P-1)</li>
-      <li class="cl-new">Patent freedom-to-operate result (prerequisite P-2)</li>
+      <li class="cl-new" style="text-decoration:line-through;opacity:0.6;">Trademark — third-party product names removed from this document ✓. Prior drafts must not circulate (prerequisite P-1 — ongoing)</li>
+      <li class="cl-new">Patent FTO — claim-level reads on three identified patents must come back clear (prerequisite P-2)</li>
       <li class="cl-new">Customer validation — five FOH engineer interviews (prerequisite P-5)</li>
       <li class="cl-new">Business model defined (prerequisite P-6)</li>
     </ul>
@@ -1159,7 +1170,7 @@ tr.row-new td { background: var(--risk-new-soft); }
       </li>
       <li class="oq-item oq-changed">
         <span class="oq-tag">Reframed</span>
-        <span>Market demand — is this a question or a deadline? Treat as a deadline: RC Audio could add HF leveling in a firmware update. Complete customer interviews (P-5) before prototype order.</span>
+        <span>Market demand — hardware niche confirmed vacant (no competitor ships a program leveler + HF ratio insert), but a 2025 software plugin now occupies adjacent space. Complete customer interviews (P-5) before prototype order.</span>
       </li>
       <li class="oq-item">
         <span class="oq-tag">Open</span>
@@ -1200,6 +1211,14 @@ tr.row-new td { background: var(--risk-new-soft); }
       <li class="oq-item oq-new">
         <span class="oq-tag">New</span>
         <span>Redundant power supply: decide for touring units before product certification (risk 10).</span>
+      </li>
+      <li class="oq-item oq-new">
+        <span class="oq-tag">New</span>
+        <span>Fixed-point integrator precision: verify ADAU1467 5.27-format accumulator word length for the minutes-scale leveler. A long show at low gain variation may cause slow drift from denormal accumulation.</span>
+      </li>
+      <li class="oq-item oq-changed">
+        <span class="oq-tag">Updated</span>
+        <span>Competitive landscape confirmed: no hardware competitor ships a program leveler + HF ratio control insert. SPL Machine Head (software, 2025) is the closest adjacent product. The hardware niche is vacant.</span>
       </li>
     </ul>
   </section>
